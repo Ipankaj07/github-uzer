@@ -1,6 +1,6 @@
-# GitHub User Search
+# GitHub Uzer
 
-GitHub User Search is a React-based web app that allows you to search for GitHub users by username and view their profiles. The app fetches data from the GitHub API and displays it in a user-friendly format, showing details such as bio, location, company, and social media links (Twitter, personal blogs).
+GitHub Uzer is a React-based web app that allows you to search for GitHub users by username and view their profiles. The app fetches data from the GitHub API and displays it in a user-friendly format, showing details such as bio, location, company, and social media links (Twitter, personal blogs).
 
 ## Demo
 
