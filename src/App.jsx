@@ -1,139 +1,167 @@
-import { useState } from "react";
 import axios from "axios";
+import { useState } from "react";
 import { BsTwitter } from "react-icons/bs";
 import { SiBiolink, SiGithub } from "react-icons/si";
+import "./App.css";
 
 function App() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+
 
   const handleChange = (e) => {
     setSearch(e.target.value);
   };
 
-  const getuserData = async (search) => {
-    const {
-      data: { items },
-    } = await axios.get(`https://api.github.com/search/users?q=${search}`);
+  const getGithubUserData = async (search) => {
+    setLoading(true);
 
-    const usersData = await Promise.all(
-      items.map(async (user) => {
-        const { data } = await axios.get(user.url);
-        return data;
-      })
-    );
+    try {
+      const config = {
+        headers: {
+          Authorization: `token ${import.meta.env.VITE_APP_GITHUB_ACCESS_TOKEN}`,
+        },
+      };
 
-    setResults(usersData);
-    setLoading(false);
+      const { data: { items } } = await axios.get(
+        `https://api.github.com/search/users?q=${search}`,
+        config
+      );
+
+      const usersData = await Promise.all(
+        items.map(async (user) =>
+          await axios.get(user.url, config).then(({ data }) => data)
+        )
+      );
+
+      setResults(usersData);
+    } catch (error) {
+      console.error("Error fetching GitHub user data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    getuserData(search);
+    setHasSearched(true);
+    getGithubUserData(search);
   };
 
   return (
-    <>
-      <div className="container mx-auto font-sans">
-        <div className="mb-4">
-          <img
-            className="mx-auto h-20 w-20 "
-            src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-            alt="github logo"
-          />
-          <p className="text-center text-2xl font-bold">Github User Search</p>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col items-center justify-center"
-        >
-          <div className="flex flex-wrap gap-2 items-center justify-center">
-            <input
-              type="text"
-              value={search}
-              onChange={handleChange}
-              placeholder="Search for user's"
-              className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-base focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Search
-            </button>
-          </div>
-        </form>
-
-        <div className="flex flex-wrap gap-4 items-center justify-center p-2">
-          {loading ? (
-            <div className="flex items-center justify-center mt-4">
-              <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-12 w-12 mb-4"></div>
-            </div>
-          ) : (
-            results.map((result) => (
-              <div
-                key={result.id}
-                className=" bg-white shadow-md rounded-lg overflow-hidden w-96 max-w-sm my-4 mx-2 mt-10 p-4"
-              >
-                <img
-                  src={result.avatar_url}
-                  alt={result.login}
-                  className="w-full h-56 object-scale-down object-center"
-                />
-                <p className="text-center font-bold text-xl my-3">
-                  {result.name ? result.name : result.login}
-                </p>
-                <p className="text-center text-gray-500 text-sm mb-3.5">
-                  {result.bio ? result.bio : "No Bio"}
-                </p>
-                <div className="flex items-center justify-evenly my-3">
-                  {result.twitter_username && (
-                    <a
-                      href={`https://twitter.com/${result.twitter_username}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <BsTwitter className="text-2xl" />
-                    </a>
-                  )}
-                  {result.blog && (
-                    <a href={result.blog} target="_blank" rel="noreferrer">
-                      <SiBiolink className="text-2xl" />
-                    </a>
-                  )}
-                  <a
-                    href={result.html_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-2xl"
-                  >
-                    <SiGithub />
-                  </a>
-                </div>
-
-                <div className="flex flex-col gap-2 my-3 mt-4">
-                  {result.company && (
-                    <p className="text-center text-gray-500 text-sm">
-                      <span className="font-bold">Company:</span>
-                      {result.company}
-                    </p>
-                  )}
-                  {result.location && (
-                    <p className="text-center text-gray-500 text-sm">
-                      <span className="font-bold">Location:</span>
-                      {result.location}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+    <div className="container bg-[#FFFBEA] text-[#3D3B2F] font-sans" style={{ fontFamily: "'Ubuntu', Arial, sans-serif" }}>
+      <div className="pt-10 pb-5 text-center">
+        <img
+          className="mx-auto h-20 w-20 rounded-full border-4 border-[#000] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+          src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+          alt="GitHub Logo"
+        />
+        <div className="mt-6 bg-gradient-to-r from-[#FFDAB9] to-[#FF6347] bg-clip-text text-transparent text-center">
+          <span className="font-bold text-4xl">GitHub Uzer</span>
+          <p className="text-md mt-2 text-gray-800">Search for your favorite GitHub users below!</p>
         </div>
       </div>
-    </>
+
+      <form onSubmit={handleSubmit} className="text-center">
+        <div className="flex justify-center gap-4 mb-6 flex-wrap items-center p-2">
+          <input
+            type="text"
+            value={search}
+            onChange={handleChange}
+            placeholder="Ex: octocat"
+            className="bg-[#FFE5E5] border-[3px] border-black p-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] mb-1 w-60 sm:w-80 lg:w-96 xl:w-1/4 focus:outline-none"
+          />
+
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center whitespace-nowrap text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 bg-[#90EE90] hover:bg-[#7CDF7C] text-black font-bold px-5 py-5 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            Search
+          </button>
+        </div>
+      </form>
+
+      <div className="content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        {loading && (
+          <div className="col-span-full flex justify-center">
+            <div className="loader border-8 border-gray-300 border-t-gray-500 rounded-full w-16 h-16 animate-spin"></div>
+          </div>
+        )}
+
+        {hasSearched && results.length === 0 && !loading && (
+          <div className="flex justify-center col-span-full text-gray-600 font-bold h-32 items-center">
+            No results found. Please try again.
+          </div>
+        )}
+
+        {results.length !== 0 && !loading ? (
+          results.map((result) => (
+            <div key={result.id} className="bg-card text-card-foreground p-3 border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <img
+                src={result.avatar_url}
+                alt={result.login}
+                className="w-full h-[280px] object-cover mb-3 border-2 border-black"
+              />
+              <p className="text-lg font-bold mt-4 text-center">
+                {result.name || result.login}
+              </p>
+              <p className="text-sm text-gray-600 text-center mt-2">
+                {result.bio || "No bio available"}
+              </p>
+              <div className="flex justify-center gap-4 mt-4">
+                {result.twitter_username && (
+                  <a
+                    href={`https://twitter.com/${result.twitter_username}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <BsTwitter className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-pink-500 hover:text-white bg-[#FFB6C1] border-2 border-black  shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2 h-8 w-8"
+                    />
+                  </a>
+                )}
+                {result.blog && (
+                  <a href={result.blog} target="_blank" rel="noreferrer">
+                    <SiBiolink className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-purple-500 hover:text-white bg-[#E6E6FA] border-2 border-black  shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2 h-8 w-8"
+                    />
+                  </a>
+                )}
+                <a
+                  href={result.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-purple-300 hover:text-white bg-[#D8B7DD] border-2 border-black  shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-2 h-8 w-8"
+
+                >
+                  <SiGithub />
+                </a>
+              </div>
+              {result.location && (
+                <p className="mt-4 text-sm text-gray-600 text-center">
+                  <strong>Location:</strong> {result.location}
+                </p>
+              )}
+              {result.company && (
+                <p className="mt-2 text-sm text-gray-600 text-center">
+                  <strong>Company:</strong> {result.company}
+                </p>
+              )}
+            </div>
+          ))
+        ) : null}
+      </div>
+
+      <footer className="text-center p-5 text-gray-600">
+        <p className="bg-[#FFDAB9] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] border-[3px] border-black p-1.5">
+          Made with ❤️ by{" "}
+          <a href="https://github.com/ipankaj07" target="_blank" rel="noreferrer" className="text-blue-500">
+            Pankaj Raj
+          </a>
+        </p>
+      </footer>
+    </div>
   );
 }
 
